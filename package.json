@@ -1,0 +1,55 @@
+{
+  "name": "greybox",
+  "version": "0.1.0",
+  "description": "Flake belongs in pastry. Not in CI. AI-powered natural language E2E testing for React Native with Detox sync.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' 'tests/**/*.ts' --fix",
+    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts'",
+    "test": "jest",
+    "prepublishOnly": "npm run lint && npm run build && npm test"
+  },
+  "keywords": [
+    "detox",
+    "react-native",
+    "testing",
+    "ai",
+    "llm",
+    "e2e"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "detox": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1075.0",
+    "chalk": "^5.6.2",
+    "domhandler": "^5.0.3",
+    "htmlparser2": "^9.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.0",
+    "detox": ">=20.0.0",
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "jest": "^30.4.2",
+    "prettier": "^3.8.4",
+    "ts-jest": "^29.4.11",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.62.0"
+  }
+}

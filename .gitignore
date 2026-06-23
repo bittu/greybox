@@ -1,0 +1,23 @@
+node_modules/
+dist/
+*.tgz
+
+# Cache
+.greybox-cache.json
+
+# Test output
+test-results/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Env
+.env
+.env.local
+
+# Debug logs
+*.log
