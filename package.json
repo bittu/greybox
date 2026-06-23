@@ -1,6 +1,6 @@
 {
   "name": "greybox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Flake belongs in pastry. Not in CI. AI-powered natural language E2E testing for React Native with Detox sync.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
