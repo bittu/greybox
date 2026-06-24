@@ -55,7 +55,7 @@ export class OllamaPromptHandler implements PromptHandler {
             role: 'system',
             content: SYSTEM_PROMPT,
           },
-          { role: 'user', content: prompt },
+          { role: 'user', content: `/no_think\n\n${prompt}` },
         ],
       }),
     });

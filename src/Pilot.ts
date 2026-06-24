@@ -320,6 +320,8 @@ Respond with a JSON object:
       );
     }
 
+    console.log('[Pilot][resolveAndRun]', code, fromCache, result);
+
     return { code, fromCache, result };
   }
 
