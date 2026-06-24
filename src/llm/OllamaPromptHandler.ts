@@ -7,6 +7,30 @@ export interface OllamaConfig {
   model?: string;
 }
 
+const SYSTEM_PROMPT = `You are a Detox test code generator for React Native.
+
+OUTPUT RULES — follow exactly:
+1. Output ONLY a single \`\`\`js code block
+2. The code must be 1-5 lines of plain executable statements
+3. NO imports, NO describe(), NO it(), NO test()
+4. NO markdown outside the code fence
+5. NO XML, NO explanations, NO comments
+
+BAD output (never do this):
+\`\`\`js
+import { expect } from 'chai';
+describe('test', () => {
+  it('does thing', async () => {
+    await expect(element(by.id('x'))).toBeVisible();
+  });
+});
+\`\`\`
+
+GOOD output (always do this):
+\`\`\`js
+await expect(element(by.id('welcomeMessage'))).toBeVisible();
+\`\`\``;
+
 export class OllamaPromptHandler implements PromptHandler {
   private baseUrl: string;
   private model: string;
@@ -23,12 +47,13 @@ export class OllamaPromptHandler implements PromptHandler {
       body: JSON.stringify({
         model: this.model,
         stream: false,
+        temperature: 0.0, // ← fully deterministic, no creativity
+        num_predict: 200, // ← hard cap, prevents rambling
+        stop: ['```\n\n', '```\r\n\r\n'], // ← stop after closing fence
         messages: [
           {
             role: 'system',
-            content:
-              'You are a code generator. You ONLY output JavaScript code inside ```js fences. ' +
-              'Never output XML, HTML, or explanations. Only executable JS code.',
+            content: SYSTEM_PROMPT,
           },
           { role: 'user', content: prompt },
         ],

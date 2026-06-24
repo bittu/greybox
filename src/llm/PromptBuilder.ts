@@ -1,29 +1,10 @@
 import type { APICatalog, StepResult } from '../types';
 
-const formatCatalog = (catalog: APICatalog): string => {
-  const lines: string[] = [`# Available ${catalog.name} APIs`, catalog.description, ''];
-  for (const cat of catalog.categories) {
-    lines.push(`## ${cat.title}`);
-    for (const item of cat.items) {
-      lines.push(`### ${item.signature}`);
-      lines.push(item.description);
-      lines.push(`Example:\n\`\`\`js\n${item.example}\n\`\`\``);
-      if (item.guidelines?.length) {
-        lines.push('Guidelines:');
-        item.guidelines.forEach((g) => lines.push(`- ${g}`));
-      }
-      lines.push('');
-    }
-  }
-  return lines.join('\n');
-};
-
 const formatHistory = (history: StepResult[]): string => {
   if (!history.length) return '';
-  const lines = ['# Previous steps'];
+  const lines = ['Previous steps:'];
   for (const s of history.slice(-5)) {
-    lines.push(`- Instruction: "${s.instruction}"`);
-    lines.push(`  Code: \`${s.code.replace(/\n/g, ' ').slice(0, 120)}\``);
+    lines.push(`- "${s.instruction}" → \`${s.code.replace(/\n/g, ' ').slice(0, 100)}\``);
   }
   return lines.join('\n');
 };
@@ -31,25 +12,21 @@ const formatHistory = (history: StepResult[]): string => {
 export const buildPrompt = (
   instruction: string,
   treeXml: string,
-  catalog: APICatalog,
+  _catalog: APICatalog,
   history: StepResult[],
-): string =>
-  `
-Generate ${catalog.name} JavaScript code for this test step.
+): string => {
+  const historyBlock = history.length > 0 ? `\n${formatHistory(history)}\n` : '';
 
-IMPORTANT: Output ONLY a \`\`\`js code block with executable JavaScript. No XML. No explanation.
+  return `You write Detox test code. Output ONLY a \`\`\`js block with 1-3 lines of code.
 
-Available APIs:
-- element(by.id('testID')).tap() — tap an element by testID
-- element(by.label('text')).tap() — tap by accessibility label
-- element(by.text('text')).tap() — tap by visible text
-- element(by.type('ScrollView')).atIndex(0).scroll(300, 'down') — scroll
-- await expect(element(by.text('...'))).toBeVisible() — assert visible
-- await expect(element(by.label('...'))).toExist() — assert exists
-- element(by.id('field')).typeText('value') — type text
+RULES:
+- No imports. No describe/it/test blocks. No comments. Just the action code.
+- ONLY use element IDs, labels, or text values that appear in the tree below.
+- If the element is not in the tree, output: throw new Error('Element not found')
 
-${formatHistory(history)}
-
+APIs: element(by.id/by.label/by.text).tap() | .typeText('x') | .scroll(300,'down')
+Assertions: await expect(element(by.text('x'))).toBeVisible()
+${historyBlock}
 UI Tree:
 \`\`\`xml
 ${treeXml}
@@ -57,13 +34,13 @@ ${treeXml}
 
 Instruction: ${instruction}
 
-Example output for "verify Hello is visible":
+Example for "verify Welcome is visible" given tree has text="Welcome to App":
 \`\`\`js
-await expect(element(by.text('Hello'))).toBeVisible();
+await expect(element(by.text('Welcome to App'))).toBeVisible();
 \`\`\`
 
-Now generate the code for the instruction above:
-`.trim();
+Output:`;
+};
 
 /** Extract the JS code from the LLM response, stripping markdown fences */
 export const extractCode = (response: string): string => {
@@ -71,21 +48,29 @@ export const extractCode = (response: string): string => {
   const match = response.match(/```(?:js|ts|javascript|typescript)\s*([\s\S]*?)```/);
   if (match) {
     const code = match[1].trim();
-    // Reject if the LLM returned XML/HTML instead of code
-    if (code.startsWith('<')) return '';
+    if (!isValidCode(code)) return '';
     return code;
   }
   // Check for any fenced block (but reject xml/html)
   const anyFence = response.match(/```(?!xml|html)(\w*)\s*([\s\S]*?)```/);
   if (anyFence) {
     const code = anyFence[2].trim();
-    if (code.startsWith('<')) return '';
+    if (!isValidCode(code)) return '';
     return code;
   }
-  // No fences — only treat as code if it looks like JS (starts with await/const/return/throw)
+  // No fences — only treat as code if it looks like executable JS
   const trimmed = response.trim();
   if (/^(await|const|let|var|return|throw|if|for|element|expect|waitFor)/.test(trimmed)) {
+    if (!isValidCode(trimmed)) return '';
     return trimmed;
   }
   return '';
 };
+
+/** Reject responses that aren't executable code snippets */
+function isValidCode(code: string): boolean {
+  if (code.startsWith('<')) return false;
+  if (code.startsWith('import ')) return false;
+  if (/^(describe|it|test)\s*\(/.test(code)) return false;
+  return true;
+}

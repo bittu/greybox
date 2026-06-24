@@ -57,6 +57,16 @@ describe('PromptBuilder', () => {
     const raw = '```xml\n<View raw_id="1"/>\n```';
     expect(extractCode(raw)).toBe('');
   });
+
+  it('extractCode rejects import statements', () => {
+    const raw = "```js\nimport { expect } from 'chai';\nawait element(by.id('x')).tap();\n```";
+    expect(extractCode(raw)).toBe('');
+  });
+
+  it('extractCode rejects describe/it blocks', () => {
+    const raw = "```js\ndescribe('test', () => { it('works', async () => {}) });\n```";
+    expect(extractCode(raw)).toBe('');
+  });
 });
 
 describe('CodeEvaluator', () => {
