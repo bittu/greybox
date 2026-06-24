@@ -43,9 +43,19 @@ describe('PromptBuilder', () => {
     expect(extractCode(raw)).toBe('const x = 1;');
   });
 
-  it('extractCode returns raw if no fences', () => {
+  it('extractCode returns raw if no fences but looks like JS', () => {
     const raw = "await element(by.id('btn')).tap();";
     expect(extractCode(raw)).toBe(raw);
+  });
+
+  it('extractCode rejects XML responses', () => {
+    const raw = '<ReactTextView label="Hello" />';
+    expect(extractCode(raw)).toBe('');
+  });
+
+  it('extractCode rejects xml fenced blocks', () => {
+    const raw = '```xml\n<View raw_id="1"/>\n```';
+    expect(extractCode(raw)).toBe('');
   });
 });
 

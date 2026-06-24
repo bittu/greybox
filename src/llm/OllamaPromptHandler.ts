@@ -23,7 +23,15 @@ export class OllamaPromptHandler implements PromptHandler {
       body: JSON.stringify({
         model: this.model,
         stream: false,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a code generator. You ONLY output JavaScript code inside ```js fences. ' +
+              'Never output XML, HTML, or explanations. Only executable JS code.',
+          },
+          { role: 'user', content: prompt },
+        ],
       }),
     });
 
