@@ -15,7 +15,6 @@ export class AnthropicPromptHandler implements PromptHandler {
 
   constructor(config: AnthropicConfig) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Anthropic = require('@anthropic-ai/sdk');
       this.client = new Anthropic({ apiKey: config.apiKey });
     } catch {

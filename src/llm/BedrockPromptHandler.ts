@@ -23,7 +23,6 @@ export class BedrockPromptHandler implements PromptHandler {
 
   constructor(config: BedrockConfig = {}) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const bedrock = require('@aws-sdk/client-bedrock-runtime');
       this.client = new bedrock.BedrockRuntimeClient({ region: config.region ?? 'us-east-1' });
       this.InvokeModelCommand = bedrock.InvokeModelCommand;
