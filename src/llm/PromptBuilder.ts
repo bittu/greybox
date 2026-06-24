@@ -26,6 +26,7 @@ export const buildPrompt = (
 RULES:
 - No imports. No describe/it/test blocks. No comments. Just the action code.
 - ONLY use element IDs, labels, or text values that appear in the tree below.
+- For labels with comma-separated text, each segment is a separate visible text on screen. Use by.text() with the exact segment.
 - If the element is not in the tree, output: throw new Error('Element not found')
 
 APIs:
@@ -38,9 +39,9 @@ ${treeXml}
 
 Instruction: ${instruction}
 
-Example for "verify Welcome is visible" given tree has text="Welcome to App":
+Example for "verify Welcome is visible" given tree has label="Welcome to React Native":
 \`\`\`js
-await expect(element(by.text('Welcome to App'))).toBeVisible();
+await expect(element(by.text('Welcome to React Native'))).toBeVisible();
 \`\`\`
 
 Output:`;

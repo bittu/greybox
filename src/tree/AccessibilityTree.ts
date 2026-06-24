@@ -35,12 +35,20 @@ const normaliseAttrs = (el: Element): Record<string, string> => {
   if (id) norm.id = id;
 
   // label: label (iOS), content-desc (Android)
-  const label = a['label'] || a['content-desc'] || '';
-  if (label) norm.label = label;
+  // Truncate very long concatenated labels (Android collapses entire screens)
+  const rawLabel = a['label'] || a['content-desc'] || '';
+  if (rawLabel && rawLabel.length <= 100) {
+    norm.label = rawLabel;
+  } else if (rawLabel) {
+    // Extract first meaningful segment from comma-separated labels
+    const firstSegment = rawLabel.split(',')[0].trim();
+    norm.label = firstSegment.slice(0, 80);
+  }
 
   // text / value
   const text = a['text'] || a['value'] || '';
-  if (text) norm.text = text;
+  if (text && text.length <= 100) norm.text = text;
+  else if (text) norm.text = text.slice(0, 80);
 
   // type: tag name is already the type for XCUITest; class for Android
   norm.type = a['class'] || el.name;

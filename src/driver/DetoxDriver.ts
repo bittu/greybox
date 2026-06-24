@@ -23,20 +23,25 @@ export class DetoxDriver implements FrameworkDriver {
 
   async captureViewHierarchy(): Promise<string> {
     try {
-      // Run a no-op waitFor against a view that always exists.
-      // This forces Detox's synchronisation engine to drain — JS thread,
-      // Reanimated animations, timers, network — before we read the tree.
-      // Without this the XML can reflect a transitional UI state.
       await this.d
         .waitFor(this.d.element(this.d.by.type('RCTRootContentView')))
         .toExist()
         .withTimeout(10000);
     } catch {
-      // If the sync wait itself times out (e.g. app is genuinely busy),
-      // still attempt the capture — a partial tree is better than nothing.
+      // Non-fatal — still attempt capture
     }
+
+    // Try multiple approaches in order of preference:
+    // 1. generateViewHierarchyXml() returns a file path on some Detox versions
+    // 2. On Android, the accessibility dump may collapse views — we handle that in the tree parser
     try {
-      return await this.d.device.generateViewHierarchyXml(false);
+      const result = await this.d.device.generateViewHierarchyXml();
+      // Some Detox versions return a file path string, others return XML directly
+      if (typeof result === 'string' && result.startsWith('/')) {
+        const fs = require('fs');
+        return fs.readFileSync(result, 'utf8');
+      }
+      return result ?? '<root/>';
     } catch {
       return '<root/>';
     }
