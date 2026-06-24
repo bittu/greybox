@@ -12,20 +12,24 @@ const formatHistory = (history: StepResult[]): string => {
 export const buildPrompt = (
   instruction: string,
   treeXml: string,
-  _catalog: APICatalog,
+  catalog: APICatalog,
   history: StepResult[],
 ): string => {
   const historyBlock = history.length > 0 ? `\n${formatHistory(history)}\n` : '';
 
-  return `You write Detox test code. Output ONLY a \`\`\`js block with 1-3 lines of code.
+  const apis = catalog.categories
+    .flatMap((cat) => cat.items.map((item) => `- ${item.example}`))
+    .join('\n');
+
+  return `You write ${catalog.name} test code. Output ONLY a \`\`\`js block with 1-3 lines of code.
 
 RULES:
 - No imports. No describe/it/test blocks. No comments. Just the action code.
 - ONLY use element IDs, labels, or text values that appear in the tree below.
 - If the element is not in the tree, output: throw new Error('Element not found')
 
-APIs: element(by.id/by.label/by.text).tap() | .typeText('x') | .scroll(300,'down')
-Assertions: await expect(element(by.text('x'))).toBeVisible()
+APIs:
+${apis}
 ${historyBlock}
 UI Tree:
 \`\`\`xml
