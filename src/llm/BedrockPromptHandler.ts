@@ -1,4 +1,3 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import type { PromptHandler } from '../types';
 
 export interface BedrockConfig {
@@ -17,21 +16,31 @@ export interface BedrockConfig {
 }
 
 export class BedrockPromptHandler implements PromptHandler {
-  private client: BedrockRuntimeClient;
+  private client: any;
+  private InvokeModelCommand: any;
   private modelId: string;
   private maxTokens: number;
 
   constructor(config: BedrockConfig = {}) {
-    this.client = new BedrockRuntimeClient({ region: config.region ?? 'us-east-1' });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const bedrock = require('@aws-sdk/client-bedrock-runtime');
+      this.client = new bedrock.BedrockRuntimeClient({ region: config.region ?? 'us-east-1' });
+      this.InvokeModelCommand = bedrock.InvokeModelCommand;
+    } catch {
+      throw new Error(
+        'greybox: @aws-sdk/client-bedrock-runtime is required for BedrockPromptHandler. ' +
+          'Install it with: npm install @aws-sdk/client-bedrock-runtime',
+      );
+    }
     this.modelId = config.modelId ?? 'anthropic.claude-3-haiku-20240307-v1:0';
     this.maxTokens = config.maxTokens ?? 2048;
   }
 
   async runPrompt(prompt: string): Promise<string> {
-    // Bedrock requires model-specific request bodies
     const body = this.buildBody(prompt);
 
-    const cmd = new InvokeModelCommand({
+    const cmd = new this.InvokeModelCommand({
       modelId: this.modelId,
       contentType: 'application/json',
       accept: 'application/json',
@@ -44,7 +53,6 @@ export class BedrockPromptHandler implements PromptHandler {
   }
 
   private buildBody(prompt: string): object {
-    // Anthropic Claude on Bedrock
     if (this.modelId.startsWith('anthropic.')) {
       return {
         anthropic_version: 'bedrock-2023-05-31',
@@ -52,31 +60,24 @@ export class BedrockPromptHandler implements PromptHandler {
         messages: [{ role: 'user', content: prompt }],
       };
     }
-    // Amazon Nova / Titan
     if (this.modelId.startsWith('amazon.')) {
       return {
         messages: [{ role: 'user', content: [{ text: prompt }] }],
         inferenceConfig: { maxTokens: this.maxTokens },
       };
     }
-    // Meta Llama
     if (this.modelId.startsWith('meta.')) {
       return { prompt, max_gen_len: this.maxTokens };
     }
-    // Mistral
     if (this.modelId.startsWith('mistral.')) {
       return { prompt: `<s>[INST] ${prompt} [/INST]`, max_tokens: this.maxTokens };
     }
-    // Fallback — OpenAI-style messages
     return { messages: [{ role: 'user', content: prompt }], max_tokens: this.maxTokens };
   }
 
   private extractContent(body: any): string {
-    // Anthropic
     if (body.content?.[0]?.text) return body.content[0].text;
-    // Amazon Nova
     if (body.output?.message?.content?.[0]?.text) return body.output.message.content[0].text;
-    // Llama / Mistral
     if (body.generation) return body.generation;
     if (body.outputs?.[0]?.text) return body.outputs[0].text;
     return JSON.stringify(body);

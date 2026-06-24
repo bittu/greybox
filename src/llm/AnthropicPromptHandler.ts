@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { PromptHandler } from '../types';
 
 export interface AnthropicConfig {
@@ -10,12 +9,21 @@ export interface AnthropicConfig {
 }
 
 export class AnthropicPromptHandler implements PromptHandler {
-  private client: Anthropic;
+  private client: any;
   private model: string;
   private maxTokens: number;
 
   constructor(config: AnthropicConfig) {
-    this.client = new Anthropic({ apiKey: config.apiKey });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const Anthropic = require('@anthropic-ai/sdk');
+      this.client = new Anthropic({ apiKey: config.apiKey });
+    } catch {
+      throw new Error(
+        'greybox: @anthropic-ai/sdk is required for AnthropicPromptHandler. ' +
+          'Install it with: npm install @anthropic-ai/sdk',
+      );
+    }
     this.model = config.model ?? 'claude-3-haiku-20240307';
     this.maxTokens = config.maxTokens ?? 2048;
   }
